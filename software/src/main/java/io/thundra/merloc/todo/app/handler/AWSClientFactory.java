@@ -14,6 +14,8 @@ public final class AWSClientFactory {
     }
 
     public static DynamoDbClient createDynamoDbClient() {
+        // See https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/lambda-optimize-starttime.html
+        // for the reason of why we create client in this way to reduce coldstart delay.
         return DynamoDbClient
                 .builder()
                     .region(Region.of(System.getenv("AWS_REGION")))

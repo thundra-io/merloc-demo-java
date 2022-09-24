@@ -50,6 +50,7 @@ import software.amazon.awscdk.services.s3.deployment.Source;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 import static java.util.Collections.singletonList;
 
@@ -57,6 +58,13 @@ import static java.util.Collections.singletonList;
  * @author serkan
  */
 public class InfrastructureStack extends Stack {
+
+    private static final int LAMBDA_MEMORY_SIZE = 1536;
+    private static final int LAMBDA_TIMEOUT_SECONDS = 30;
+    // You can get the latest "merloc-java" layer version here:
+    // https://api.globadge.com/v1/badgen/aws/lambda/layer/latest-version/us-east-1/269863060030/merloc-java
+    private static final int MERLOC_JAVA_LAYER_VERSION = 3;
+    private static final String MERLOC_JAVA_LAYER_ARN_TEMPLATE = "arn:aws:lambda:%s:269863060030:layer:merloc-java:%d";
 
     public InfrastructureStack(Construct parent, String id) {
         this(parent, id, null);
@@ -167,9 +175,10 @@ public class InfrastructureStack extends Stack {
                         .build());
 
         Function todoGetFunction = createFunction(
-                        "todo-get",
-                        "io.thundra.merloc.todo.app.handler.TodoGetHandler",
-                        todoTable.getTableName());
+                "todo-get",
+                "io.thundra.merloc.todo.app.handler.TodoGetHandler",
+                todoTable.getTableName(),
+                props);
         todoTable.grantReadData(todoGetFunction);
         todoAPI.addRoutes(AddRoutesOptions
                 .builder()
@@ -187,7 +196,8 @@ public class InfrastructureStack extends Stack {
         Function todoAddFunction = createFunction(
                 "todo-add",
                 "io.thundra.merloc.todo.app.handler.TodoAddHandler",
-                todoTable.getTableName());
+                todoTable.getTableName(),
+                props);
         todoTable.grantWriteData(todoAddFunction);
         todoAPI.addRoutes(AddRoutesOptions
                 .builder()
@@ -205,7 +215,8 @@ public class InfrastructureStack extends Stack {
         Function todoUpdateFunction = createFunction(
                 "todo-update",
                 "io.thundra.merloc.todo.app.handler.TodoUpdateHandler",
-                todoTable.getTableName());
+                todoTable.getTableName(),
+                props);
         todoTable.grantReadData(todoUpdateFunction);
         todoTable.grantWriteData(todoUpdateFunction);
         todoAPI.addRoutes(AddRoutesOptions
@@ -224,7 +235,8 @@ public class InfrastructureStack extends Stack {
         Function todoDeleteFunction = createFunction(
                 "todo-delete",
                 "io.thundra.merloc.todo.app.handler.TodoDeleteHandler",
-                todoTable.getTableName());
+                todoTable.getTableName(),
+                props);
         todoTable.grantWriteData(todoDeleteFunction);
         todoAPI.addRoutes(AddRoutesOptions
                 .builder()
@@ -242,7 +254,8 @@ public class InfrastructureStack extends Stack {
         Function todoListFunction = createFunction(
                 "todo-list",
                 "io.thundra.merloc.todo.app.handler.TodoListHandler",
-                todoTable.getTableName());
+                todoTable.getTableName(),
+                props);
         todoTable.grantReadData(todoListFunction);
         todoAPI.addRoutes(AddRoutesOptions
                 .builder()
@@ -355,7 +368,7 @@ public class InfrastructureStack extends Stack {
         }
     }
 
-    private Function createFunction(String name, String handler, String todoTableName) {
+    private Function createFunction(String name, String handler, String todoTableName, StackProps props) {
         return new Function(this, name + "-function",
                 FunctionProps
                         .builder()
@@ -363,16 +376,37 @@ public class InfrastructureStack extends Stack {
                             .runtime(Runtime.JAVA_11)
                             .code(Code.fromAsset("../software/target/todo-app.jar"))
                             .handler(handler)
-                            .memorySize(1536)
-                            .timeout(Duration.seconds(10))
+                            .memorySize(LAMBDA_MEMORY_SIZE)
+                            .timeout(Duration.seconds(LAMBDA_TIMEOUT_SECONDS))
                             .logRetention(RetentionDays.ONE_WEEK)
                             .environment(new HashMap<String, String>() {{
-                                // TODO
+                                // See https://aws.amazon.com/tr/blogs/compute/optimizing-aws-lambda-function-performance-for-java/
+                                // for details about "-XX:+TieredCompilation" and "-XX:TieredStopAtLevel=1" VM options
                                 // "-Xverify:none" is not recommended for production use
                                 // unless the function is well tested at development and staging environments
                                 put("JAVA_TOOL_OPTIONS", "-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xverify:none"); // For fast startup
                                 put("TODO_TABLE_NAME", todoTableName);
+                                boolean merlocUsed = false;
+                                for (Map.Entry<String, String> e : System.getenv().entrySet()) {
+                                    String envVarName = e.getKey();
+                                    String envVarValue = e.getValue();
+                                    if (envVarName.startsWith("MERLOC_")) {
+                                        put(envVarName, envVarValue);
+                                        merlocUsed = true;
+                                    }
+                                }
+                                if (merlocUsed) {
+                                    put("AWS_LAMBDA_EXEC_WRAPPER", "/opt/merloc_wrapper");
+                                }
                             }})
+                            .layers(Arrays.asList(
+                                    LayerVersion.fromLayerVersionArn(
+                                            this,
+                                            name + "-function-merloc-java-layer",
+                                            String.format(
+                                                    MERLOC_JAVA_LAYER_ARN_TEMPLATE,
+                                                    props.getEnv().getRegion(),
+                                                    MERLOC_JAVA_LAYER_VERSION))))
                         .build());
     }
 

@@ -43,6 +43,10 @@
             <artifactId>url-connection-client</artifactId>
             <version>${aws.sdk2.version}</version>
         </dependency>
+        <!--
+            See https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/lambda-optimize-starttime.html
+            for the reason of why we use "jackson-jr-objects" instead of "jackson-data-bind" to reduce coldstart delay.
+        -->
         <dependency>
             <groupId>com.fasterxml.jackson.jr</groupId>
             <artifactId>jackson-jr-objects</artifactId>
