@@ -284,13 +284,6 @@ public class InfrastructureStack extends Stack {
                             .autoDeleteObjects(true)
                         .build());
 
-        new BucketDeployment(this, "todo-app-bucket-deployment",
-                BucketDeploymentProps
-                        .builder()
-                            .sources(Arrays.asList(Source.asset("../software/static/")))
-                            .destinationBucket(todoAppBucket)
-                        .build());
-
         String todoAppDomainNameValue = todoDomainName != null ? ("app.todo." + todoDomainName) : null;
 
         ICertificate todoAppCertificate = null;
@@ -342,6 +335,15 @@ public class InfrastructureStack extends Stack {
                                                 .responseHttpStatus(200)
                                                 .responsePagePath("/index.html")
                                             .build()))
+                        .build());
+
+        new BucketDeployment(this, "todo-app-bucket-deployment",
+                BucketDeploymentProps
+                        .builder()
+                            .sources(Arrays.asList(Source.asset("../software/static/")))
+                            .destinationBucket(todoAppBucket)
+                            .distribution(todoAppDistribution)
+                            .distributionPaths(Arrays.asList("/*"))
                         .build());
 
         if (todoAppDomainNameValue != null) {
