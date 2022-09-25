@@ -193,7 +193,7 @@ label[for='toggle-all'] {
 }
 
 .todo-list li .toggle:checked:after {
-    content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='-10 -18 100 135'%3E%3Ccircle cx='50' cy='50' r='50' fill='none' stroke='%239962FF' stroke-width='3'/%3E%3Cpath fill='%239962FF' d='M72 25L42 71 27 56l-4 4 20 20 34-52z'/%3E%3C/svg%3E");
+    content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='-10 -18 100 135'%3E%3Ccircle cx='50' cy='50' r='50' fill='none' stroke='%2353AD6F' stroke-width='3'/%3E%3Cpath fill='%2353AD6F' d='M72 25L42 71 27 56l-4 4 20 20 34-52z'/%3E%3C/svg%3E");
 }
 
 .todo-list li label {
