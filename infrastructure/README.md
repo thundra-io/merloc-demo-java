@@ -8,6 +8,7 @@ to be able to develop, test, debug and hot-reload AWS Lambda functions locally.
 
 ## Prerequisites
 - Java 8+
+- Maven 3.x
 - AWS CDK 1.x/2.x
 
 ## Setup
@@ -76,4 +77,4 @@ or to [submit Pull Requests](https://github.com/thundra-io/merloc-demo-java/pull
 
 ## License
 
-Licensed under [Apache License 2.0](LICENSE).
+Licensed under [Apache License 2.0](../LICENSE).
